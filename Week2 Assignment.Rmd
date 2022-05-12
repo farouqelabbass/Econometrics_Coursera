@@ -1,0 +1,170 @@
+---
+title: 'Week2 Assignment : Econometrics'
+author: "Farouq El-Abbass"
+date: "21/05/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Questions
+
+This test exercise is of a theoretical nature. In our discussion of the F-test, the total set of explanatory factors was split in two parts. The factors in $X_{1}$ are always included in the model, whereas those in $X_{2}$ are possibly removed.  
+In questions (a), (b), and (c) you derive relations between the two OLS estimates of the effects of $X_{1}$ on y, one in the large model and the other in the small model. In parts (d), (e), and (f), you check the relation of question (c) numerically for the wage data of our lectures.
+We use the notation of Lecture 2.4.2 and assume that the standard regression assumptions A1-A6 are satisfied for the unrestricted model. The restricted model is obtained by deleting the set of *g* explanatory factors collected in the last *g* columns $X_{2}$ of $X$. We wrote the model with $X = (X_{1}X_{2})$ and corresponding partitioning of the OLS estimator $b$ in $b_{1}$ and $b_{2}$ as $y = X_{1}\beta_{1} + X_{2}\beta_{2} + \epsilon = X_{1}b_{1} + X_{2}b_{2} + e$.  
+We denote by $b_{R}$ the OLS estimator of $beta_{1}$ obtained by regressing y on $X_{1}$, so that $b_{R}=(X'_{1}X_{1})^{-1}X'_{1}y$. Further, let $P=(X'_{1}X_{1})^{-1}X'_{1}X_{2}$
+
+(a) Prove that $E(b_{R})=\beta_{1} + P\beta_{2}$.
+(b) Prove that $var(b_{R}) = \sigma^{2}(X'_{1}X_{1})^{-1}$.  
+(c) Prove that $b_{R} = b_{1} + Pb_{2}$.  
+  
+  
+Now consider the wage data of Lectures 2.1 and 2.5. Let y be log-wage (500×1 vector), and let $X_{1}$ be the (500×2) matrix for the constant term and the variable ‘Female’. Further let $X_{2}$ be the (500 × 3) matrix with observations of the variables ‘Age’, ‘Educ’ and ‘Parttime’. The values of $b_{R}$ were given in Lecture 2.1, and those of b in Lecture 2.5.  
+
+(d) Argue that the columns of the (2 × 3) matrix P are obtained by regressing each of the variables ‘Age’, ‘Educ’, and ‘Parttime’ on a constant term and the variable ‘Female’.  
+(e) Determine the values of P from the results in Lecture 2.1.  
+(f) Check the numerical validity of the result in part (c). Note: This equation will not hold exactly because the coefficients have been rounded to two or three decimals; preciser results would have been obtained for higher precision coefficients.
+
+
+# Answers
+
+***NOTE***  
+As mentionned in the exercise, we're going to need the six OLS assumptions.  
+
+
+## Question A
+$$
+E(b_{R})=E((X'_{1}X_{1})^{-1}X'_{1}y\\  
+$$
+$$
+=E((X'_{1}X_{1})^{-1}X'_{1} (X_{1}\beta_{1} + X_{2}\beta_{2} + \epsilon))\\ 
+$$
+$$
+=E((X'_{1}X_{1})^{-1}X'_{1}X_{1}\beta_{1}+(X'_{1}X_{1})^{-1}X'_{1} X_{2}\beta_{2}+(X'_{1}X_{1})^{-1}X'_{1}\epsilon)\\  
+$$
+$$
+=(X'_{1}X_{1})^{-1}X'_{1}X_{1}E(\beta_{1})+(X'_{1}X_{1})^{-1}X'_{1} X_{2}E(\beta_{2})+(X'_{1}X_{1})^{-1}X'_{1}E(\epsilon) \\  
+$$
+**X and $\beta$ fixed and E($\epsilon$)=0** 
+$$
+=\beta_{1}+(X'_{1}X_{1})^{-1}X'_{1} X_{2}\beta_{2}\\
+$$
+$$
+=\beta_{1}+P\beta_{2}\\
+$$
+
+## Question B
+$$
+var(b_{R}) = E((b_{R}-E(b_R))(b_{R}-E(b_R))') 
+$$
+First let's calculate the value of $b_{R}-E(b_R)$.
+$$
+b_{R}-E(b_R)=b_{R}-\beta_{1}-P\beta_{2}=(X'_{1}X_{1})^{-1}X'_{1}\epsilon
+$$
+So  :
+$$
+var(b_{R}) = E(((X'_{1}X_{1})^{-1}X'_{1}\epsilon)((X'_{1}X_{1})^{-1}X'_{1}\epsilon)')\\
+$$
+$$
+=E((X_1'X_1)^{-1}X_1'\epsilon\epsilon'X_1(X_1'X_1)^{-1})\\
+$$
+$$
+=(X_1'X_1)^{-1}X_1'E(\epsilon\epsilon')X_1(X_1'X_1)^{-1}\\
+$$
+$$
+=(X_1'X_1)^{-1}X_1'\sigma^2IX_1(X_1'X_1)^{-1}\\
+$$
+$$
+=\sigma^2I(X_1'X_1)^{-1}\\
+$$
+
+## Question C
+
+$$
+b_R=(X'_{1}X_{1})^{-1}X'_{1}y\\
+$$
+$$
+=((X'_{1}X_{1})^{-1}X'_{1})(X_{1}b_{1} + X_{2}b_{2} + e)\\
+$$
+$$
+=b_1+Pb_2+(X'_{1}X_{1})^{-1}X'_{1}e
+$$
+We have that $X'_{1}e=0$ due to orthogonality, so :
+$$
+b_R=b_1+Pb_2
+$$
+
+## Question D
+
+First of all, we have in our regression model 5 terms : 1 constant and 4 variables (Female, Educ, Age and Parttime).  
+In our model that contained them, we had :  
+$$
+log(Wage)=X_1\beta_1+X_2\beta_2+\epsilon
+$$
+$log(Wage)$ is a (500x1) Matrix, so $X_1\beta_1+X_2\beta_2+\epsilon$ should also be (500x1).  
+We have $X_1$ is a (500x2) matrix, with 2 columns for the constant term and the ‘Female’ variable, and we have $X_2$ is a (500x3) matrix with 3 columns for the ‘Age’, ‘Educ’ and ‘Parttime’ variables.  
+So $X_1'X_1$ is a (2x2) matrix, hence $(X_1'X_1)^{-1}$, therefore $(X_1'X_1)^{-1}X_1'$ is a (2x500), and finally $(X_1'X_1)^{-1}X_1'$ which is $P$ is a (2x3) matrix which columns contain respectively OLS formulas for regressing each of the variables ‘Age’, ‘Educ’, and ‘Parttime’ on the constant term and the variable ‘Female’.  
+
+## Question E
+
+We'll load the libraries we´ll need
+```{r libraries}
+library(readxl)
+```
+Let's read the dataset
+```{r dataset}
+data <-  read_excel("Dataset2.xls")
+data
+Female=data$Female
+Age=data$Age
+Educ=data$Educ
+Parttime=data$Parttime
+y=data$LogWage
+model <- lm(y ~ Female + Age + Educ + Parttime)
+summary(model)
+X1 <- cbind(rep(1,length(Female)), Female)
+X2 <- cbind(Age, Educ, Parttime)
+P1 <- t(X1)%*%X1
+P2 <- t(X1)%*%X2
+P <- solve(P1)%*%P2
+P
+```
+So by that :
+
+$$
+P=
+\left(\begin{array}{ccc} 
+  40.0506329 & 2.2594937  & 0.1962025\\
+  -0.1104155 & -0.4931893 & 0.2494496\\
+\end{array}\right)
+$$
+
+# Question F
+
+```{r modely}
+model$coefficients
+b1 <- c(model$coefficients[1],model$coefficients[2])
+b1
+b2 <- c(model$coefficients[3],model$coefficients[4],model$coefficients[5])
+b2
+br <- b1 + P%*%b2
+br
+```
+
+So by that :
+$$
+b_R=
+\left(\begin{array}{cc} 
+  4.7336443\\
+  -0.250642
+\end{array}\right)
+$$
+
+This aligns with the bR defined in Lecture 2.1 :
+$$
+log(Wage)_i=4.73-0.25Female+e_i
+$$
+
+There are some minor differences in $b_R$ due to computation processes.

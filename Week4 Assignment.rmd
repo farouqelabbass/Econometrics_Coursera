@@ -1,0 +1,106 @@
+---
+title: "Week4 Assignment"
+author: "Farouq El-Abbass"
+date: "29/05/2020"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Questions
+
+A challenging and very relevant economic problem is the measurement of the returns to schooling. In this question we will use the following variables on 3010 US men:  
+-logw: log wage  
+-educ: number of years of schooling  
+-age: age of the individual in years  
+-exper: working experience in years  
+-smsa: dummy indicating whether the individual lived in a metropolitan area  
+-south: dummy indicating whether the individual lived in the south  
+-nearc: dummy indicating whether the individual lived near a 4-year college  
+-dadeduc: education of the individual’s father (in years)  
+-momeduc: education of the individual’s mother (in years)  
+This data is a selection of the data used by D. Card (1995).         
+(a) Use OLS to estimate the parameters of the model
+$$
+logw = \beta_1 + \beta_2 educ + \beta_3 exper + \beta_4 exper^2 + \beta_5 smsa + \beta_6 south + \epsilon
+$$
+Give an interpretation to the estimated $\beta_2$ coefficient.  
+(b) OLS may be inconsistent in this case as educ and exper may be endogenous. Give a reason why this may be the case. Also indicate whether the estimate in part (a) is still useful.  
+(c) Give a motivation why age and $age^2$ can be used as instruments for exper and $exper^2$.  
+(d) Run the first-stage regression for educ for the two-stage least squares estimation of the parameters in the model above when age, $age^2$, nearc, dadeduc, and momeduc are used as additional instruments. What do you conclude about the suitability of these instruments for schooling?  
+(e) Estimate the parameters of the model for log wage using two-stage least squares where you correct for the endogeneity of education and experience. Compare your result to the estimate in part (a).  
+(f) Perform the Sargan test for validity of the instruments. What is your conclusion?  
+
+# Answers
+
+Let's read the table.
+```{r data}
+library(readxl)
+datasheet <- read_excel("TestExer4_Wage-round1.xlsx")
+datasheet
+```
+
+## Question A
+```{r ols}
+logw <- datasheet$logw
+educ <- datasheet$educ
+age <- datasheet$age
+exper <- datasheet$exper
+exper2 <- exper^2
+smsa <- datasheet$smsa
+south <- datasheet$south
+nearc <- datasheet$ nearc
+dadeduc <- datasheet$daded
+momeduc <- datasheet$momed
+ols <- lm(logw ~ educ + exper + exper2 + smsa + south)
+summary(ols)
+```
+Interpretaion : a 1 year increase in years of schooling implies directly a 8% increase in log wage.
+
+## Question B
+
+People with higher experience and education level can be paid a lot better than the ones with lower experience and education. And if we're talking about paiement then we implie directly someone's wage, and that also can be due to other variables as family support, social class.... So experience and education in this case may be endogeneous in this model.  
+So if there-s endogeneity in those variables, the estimates would be biased and inconsistent, therefore not useful anymore.  
+
+## Question C
+
+Age is a stochastic process that cannot be neither undone neither influenced, and it is also obviously related to experience as younger people cannot have a very long experience, as we measure experience by age. So it’s a good instrument for the experience variable. And the same applies for their squared values.
+
+## Question D
+```{r 2sls}
+age2 <- age^2
+model1 <- lm(educ ~ smsa + south + age + age2 + nearc + dadeduc + momeduc)
+summary(model1)
+```
+
+From the results we can see the high significance of the instruments, because of the high t-value. The additional instruments explain very well the education variable, espacially the father's and mother's education.  
+
+## Question E
+
+```{r 2sls2}
+model2 <- lm(exper ~ smsa + south + age + age2 + nearc + dadeduc + momeduc)
+summary(model2)
+model3 <- lm(exper2 ~ smsa + south + age + age2 + nearc + dadeduc + momeduc)
+summary(model3)
+educFit <- fitted(model1)
+experFit <- fitted(model2)
+exper2Fit <- fitted(model3)
+sls2 <- lm(logw ~ educFit + experFit + exper2Fit + smsa + south)
+summary(sls2)
+```
+
+***We can see that both models look a bit similar, and that both education and experience still have a positive effect while the squared experience still has a negative effect to logw.***   
+
+The 2SLS education estimated effect size of about 10% is a bit larger than the OLS estimation of about 8.2%, while the 2SLS experience estimated effect size of about 7.3% is a bit smaller than the OLS estimation of about 8.4%. And both 2SLS and OLS estimated a (small) negative 0.2% effect size for the squared experience variable.  
+
+## Question F
+```{r sargan}
+library(ivpack)
+model5 <- ivreg(logw ~ educ + exper + exper2 + smsa + south | age + age2 + smsa + south + nearc + dadeduc + momeduc)
+summary(model5, diagnostics = TRUE)
+```
+As shown above, the Sargan Test has a p-value > 0.15 : ***we do not reject the null hypothesis, so the instruments are not related with errors of the linear model called on logwage and are should not be omitted variables in the model, so they qualify correctly as instruments.***

@@ -1,0 +1,249 @@
+---
+title: "Week3 Assignment"
+author: "Farouq El-Abbass"
+date: "26/05/2020"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Questions
+
+This test exercise is of an applied nature and uses data that are available in the data file TestExer3. We consider the
+so-called Taylor rule for setting the (nominal) interest rate. This model describes the level of the nominal interest
+rate that the central bank sets as a function of equilibrium real interest rate and inflation, and considers the current
+level of inflation and production. Taylor (1993) considers the model:
+$$
+i_t = r^* + \pi_t + 0.5(\pi_t − \pi^*) + 0.5g_t ,
+$$
+with $i_t$ the Federal funds target interest rate at time t, $r^∗$ the equilibrium real federal funds rate, $\pi_t$ a measure
+of inflation, $\pi^∗$ the target inflation rate and gt the output gap (how much actual output deviates from potential
+output). We simplify the Taylor rule in two manners. First, we avoid determining $r^∗$ and $\pi^∗$ and simply add an
+intercept to the model to capture these two variables (and any other deviations in the means). Second, we consider production $y_t$ rather than the output gap. In this form the Taylor rule is
+$$
+i_t = \beta_1 + \beta_2\pi_t + \beta_3y_t + \epsilon_t
+$$
+Monthly data are available for the USA over the period 1960 through 2014 for the following variables:  
+- INTRATE: Federal funds interest rate  
+- INFL: Inflation  
+- PROD: Production  
+- UNEMPL: Unemployment  
+- COMMPRI: Commodity prices  
+- PCE: Personal consumption expenditure  
+- PERSINC: Personal income  
+- HOUST: Housing starts  
+
+(a) Use general-to-specific to come to a model. Start by regressing the federal funds rate on the other 7 variables and eliminate 1 variable at a time.  
+(b) Use specific-to-general to come to a model. Start by regressing the federal funds rate on only a constant and add 1 variable at a time. Is the model the same as in (a)?  
+(c) Compare your model from (a) and the Taylor rule of equation (1). Consider $R^2$, AIC and BIC. Which of the
+models do you prefer?  
+(d) Test the Taylor rule of equation (1) using the RESET test, Chow break and forecast test (with in both tests as
+break date January 1980) and a Jarque-Bera test. What do you conclude?  
+
+# Answers
+
+Let's read the data file :
+```{r readfilelibrary}
+library(readxl)
+datasheet <- read_excel("TestExer 3-TaylorRule-round1.xlsx.xlsx")
+datasheet
+
+```
+
+## Question 1
+
+Let's store all the variables in vectors.  
+
+```{r variables}
+intrate=datasheet$INTRATE
+infl=datasheet$INFL
+prod=datasheet$PROD
+unemploy=datasheet$UNEMPL
+commpri=datasheet$COMMPRI
+pce=datasheet$PCE
+persinc=datasheet$PERSINC
+houst=datasheet$HOUST
+```
+We have to regress the federal funds rate on the other 7 variables and eliminate 1 variable at a time, the one that has the highest p-value.   
+```{r regression}
+model1 <- lm(intrate ~ infl + prod + unemploy + commpri + pce + persinc + houst)
+summary(model1)
+s1 <- sqrt(deviance(model1)/df.residual(model1))
+k1 <- length(model1$coefficients) - 1
+n <- nrow(datasheet)
+AIC1 <- log(s1^2) + 2 * k1 / n
+BIC1 <- log(s1^2) + k1 * log(n) / n
+AIC_BIC <- c(AIC1,BIC1)
+AIC_BIC
+```
+
+We'll have to remove the ***unemployment*** variable. We run the regression on the 6 remaining variables.  
+```{r regression2}
+model2 <- lm(intrate ~ infl + prod + commpri + pce + persinc + houst)
+summary(model2)
+s2 <- sqrt(deviance(model2)/df.residual(model2))
+k2 <- length(model2$coefficients) - 1
+n <- nrow(datasheet)
+AIC2 <- log(s2^2) + 2 * k2 / n
+BIC2 <- log(s2^2) + k2 * log(n) / n
+AIC2_BIC2 <- c(AIC2,BIC2)
+AIC2_BIC2
+```
+We'll have to remove the ***production*** variable. We run the regression on the 5 remaining variables.  
+```{r regression3}
+model3 <- lm(intrate ~ infl + commpri + pce + persinc + houst)
+summary(model3)
+s3 <- sqrt(deviance(model3)/df.residual(model3))
+k3 <- length(model3$coefficients) - 1
+n <- nrow(datasheet)
+AIC3 <- log(s3^2) + 2 * k3 / n
+BIC3 <- log(s3^2) + k3 * log(n) / n
+AIC3_BIC3 <- c(AIC3,BIC3)
+AIC3_BIC3
+```
+We have to stop the regressions here, all the remaining variables are significant.  
+
+The specified model henceforth contains the ***Federal funds interest rate***, ***Inflation***, ***Commodity prices***, ***Personal consumption expenditure***, ***Personal income*** and the ***Housing starts***.  
+
+
+The model is :
+$$
+INTRATE=-0.240119+0.717527*INFLATION-0.717527*COMMPRI
+$$
+$$
++\\0.340525*PCE+0.240242*PERSINC-0.020530*HOUST
+$$
+$$
+R^2=0.6374
+$$
+$$
+AIC=1.580988
+$$
+$$
+BIC=1.615020
+$$
+
+## Question B
+
+We'll start by running the regression on one variable at a time, then we add at each time the more significant one, which means the one with the largest absolute t-value.
+```{r regression4}
+summary(lm(intrate ~ infl))
+summary(lm(intrate ~ houst))
+summary(lm(intrate ~ pce))
+summary(lm(intrate ~ persinc))
+summary(lm(intrate ~ prod))
+summary(lm(intrate ~ unemploy))
+summary(lm(intrate ~ commpri))
+```
+We start by adding ***INFLATION*** to the model for its highest significance.  
+```{r regression5}
+summary(lm(intrate ~ infl + houst))
+summary(lm(intrate ~ infl + pce))
+summary(lm(intrate ~ infl + persinc))
+summary(lm(intrate ~ infl + prod))
+summary(lm(intrate ~ infl + unemploy))
+summary(lm(intrate ~ infl + commpri))
+```
+We then add the ***Personal income*** to the model.
+```{r regression6}
+summary(lm(intrate ~ infl + persinc + houst))
+summary(lm(intrate ~ infl + persinc + pce))
+summary(lm(intrate ~ infl + persinc + prod ))
+summary(lm(intrate ~ infl + persinc + unemploy))
+summary(lm(intrate ~ infl + persinc + commpri))
+```
+We add the ***Personal consumption expenditure*** to the model.
+```{r regression7}
+summary(lm(intrate ~ infl + persinc + pce + houst))
+summary(lm(intrate ~ infl + persinc + pce + prod ))
+summary(lm(intrate ~ infl + persinc + pce + unemploy))
+summary(lm(intrate ~ infl + persinc + pce + commpri))
+```
+We add the ***Housing starts*** to the model.  
+```{r regression8}
+summary(lm(intrate ~ infl + persinc + pce + houst + prod))
+summary(lm(intrate ~ infl + persinc + pce + houst + unemploy))
+summary(lm(intrate ~ infl + persinc + pce + houst + commpri))
+```
+We add the ***Commodity prices*** to the model.
+```{r regression9}
+summary(lm(intrate ~ infl + persinc + pce + houst + commpri + prod))
+summary(lm(intrate ~ infl + persinc + pce + houst + commpri + unemploy))
+```
+After this regression, we find that the ***Production*** and the ***Unemployment*** varibles are non significant, so we keep the model which has the ***Federal funds interest rate***, ***Inflation***, ***Commodity prices***, ***Personal consumption expenditure***, ***Personal income*** and the ***Housing starts***.  
+So : 
+$$
+INTRATE=-0.240119+0.717527*INFLATION-0.717527*COMMPRI
+$$
+$$
++\\0.340525*PCE+0.240242*PERSINC-0.020530*HOUST
+$$
+$$
+R^2=0.6374
+$$
+$$
+AIC=1.580988
+$$
+$$
+BIC=1.615020
+$$
+***It is indeed the same model found at (a).***
+
+## Question C
+Let's run the Taylor's model regression.  
+```{r taylor}
+taylor <- lm(intrate ~ infl + prod)
+summary(taylor)
+```
+We now calculate the AIC and BIC of this model.  
+```{r aic bic}
+st <- sqrt(deviance(taylor)/df.residual(taylor))
+kt <- length(taylor$coefficients) - 1
+n = nrow(datasheet)
+AICt <- log(st^2) + (2 * kt / n)
+BICt <- log(st^2) + (kt * log(n) / n)
+AICt_BICt <- c(AICt,BICt)
+AICt_BICt
+```
+
+If we compare the $AIC$, $BIC$ and $R^2$ values of Taylor's model and the model in question (a), we find that the model in the question has lower $AIC=1.580988$ and $BIC=1.615020$ and higher $R^2=0.6374$ comparing to the Taylor model which has $AIC=1.726704$ and $BIC=1.740316$ and $R^2=0.5747$.  
+***This means that the model considered in question (a) is better than the Taylor one.***
+
+## Question D
+RESET TEST :
+```{r reset}
+library(fRegression)
+resetTest(taylor, power = 2, type = "fitted", data = datasheet)
+```
+***The RESET test on fitted values is not significant: it does not reject the Null hypothesis that additional variables would not improve the explanatory power of the model.***  
+
+Chow Break Test :
+```{r chowb}
+library(gap)
+data1 <- subset(datasheet, datasheet$OBS < "1980:1")
+x1 <- data1[, c("INFL", "PROD")] 
+y1 <- data.frame( INTRATE = data1["INTRATE"] )
+data2 <- subset(datasheet, datasheet$OBS >= "1980:1")
+x2 <- data2[, c("INFL", "PROD")] 
+y2 <- data.frame( INTRATE = data2["INTRATE"] )
+chow.test(y1,x1,y2,x2)
+```
+***We can see that the Chow Break test is significant F(3/654)= 28,735 with p<0.001, implying a structural break in 1980.***  
+***Similar results from Chow forecast (Test statistic: F(420/237)=5.511 with p<0.001).***
+
+Now the Jaque-Bera Test :
+```{r bera}
+e0=residuals(taylor)
+jarqueberaTest(e0)
+```
+***We got that JB(X-squared)=12.444 with a p-value=0.001985<0.002 . The Jarque Bera normality test is also significant: it signals that data do not have a normal distribution, rejecting the null hypotheses of normality of the residuals.***
+
+# Conclusion
+
+*The RESET test did not rejected the null hypothesis of correct model specification, however the Chow tests and the Jarque-Bera test rejected the null hypothesis of stability and normality of the residuals.*
+
+***We conclude that the Taylor rule model is NOT a reliable model, maybe they should've considered a model for obseravations before 1980 and another for post 1980.***

@@ -1,0 +1,55 @@
+---
+title: "Week 5 Assignment"
+author: "Farouq El-Abbass"
+date: "02/06/2020"
+output: html_document
+---
+
+# Answers
+
+## Question A
+$$
+\frac{\partial Pr[resp_i=1]}{\partial age_i}+\frac{\partial Pr[resp_i=0]}{\partial age_i}
+$$
+$$
+=\frac{\partial Pr[resp_i=1]}{\partial age_i}+\frac{\partial (1-Pr[resp_i=1])}{\partial age_i}
+$$
+$$
+=\frac{\partial Pr[resp_i=1]}{\partial age_i}+\frac{-\partial Pr[resp_i=1]}{\partial age_i}
+$$
+$$
+=0
+$$
+
+## Question B
+We have $resp_i^{new}=-resp_i+1$ that means the odds ratio of each response is inversed :  
+$$
+\frac{Pr[resp_i^{new}=1]}{Pr[resp_i^{new}=0]}=\frac{Pr[resp_i=0]}{Pr[resp_i=1]}
+$$
+We have :   
+$$
+\frac{Pr[resp_i=1]}{Pr[resp_i=0]}=exp(\beta_0+\sum_{j=2}^k\beta_j*x_{ji})
+$$
+So:
+$$
+\frac{Pr[resp_i=0]}{Pr[resp_i=1]}=\frac{1}{exp(\beta_0+\sum_{j=2}^k\beta_j*x_{ji})}
+$$
+$$
+\frac{1}{exp(\beta_0+\beta_1*male_i+\beta_2*active_i+\beta_3*age_i+\beta_4*(age_i/10)^2)}
+$$
+So :
+$$
+\frac{Pr[resp_i^{new}=1]}{Pr[resp_i^{new}=0]}=\frac{1}{exp(\beta_0+\sum_{j=2}^k\beta_j*x_{ji})}
+$$
+$$
+=exp(-\beta_0-\sum_{j=2}^k\beta_j*x_{ji})
+$$
+$$
+=exp(-\beta_0-\beta_1*male_i-\beta_2*active_i-\beta_3*age_i-\beta_4*(age_i/10)^2)
+$$
+
+***Therefore, the transformation indeed implies that the sign of all parameters change.***
+
+## Question C
+***We can split the sample in two (male−only and female−only) groups, and estimate the logit model seperately for each group.***  
+In this case, the remaining activity variable parameter $\beta_2$ could also ***differ*** for each one of the groups and should be estimated seperately.

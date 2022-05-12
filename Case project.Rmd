@@ -1,0 +1,229 @@
+---
+title: "Case Project Econometrics"
+author: "Farouq El-Abbass"
+date: "14/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Questions
+
+This project is of an applied nature and uses data that are available in the data file Capstone-HousePrices. The source of these data is Anglin and Gencay, “Semiparametric Estimation of a Hedonic Price Function”(Journal of Applied Econometrics 11, 1996, pages 633-648). We consider the modeling and prediction of house prices. Data are available for 546 observations of the following variables:  
+***sell: Sale price of the house***    
+***lot: Lot size of the property in square feet***    
+***bdms: Number of bedrooms***  
+***fb: Number of full bathrooms***  
+***sty: Number of stories excluding basement***  
+***drv: Dummy that is 1 if the house has a driveway and 0 otherwise***   
+***rec: Dummy that is 1 if the house has a recreational room and 0 otherwise***   
+***ffin: Dummy that is 1 if the house has a full finished basement and 0 otherwise***   
+***ghw: Dummy that is 1 if the house uses gas for hot water heating and 0 otherwise***   
+***ca: Dummy that is 1 if there is central air conditioning and 0 otherwise***   
+***gar: Number of covered garage places***  
+***reg: Dummy that is 1 if the house is located in a preferred neighborhood of the city and 0 otherwise***  
+***obs: Observation number, needed in part (h)***  
+
+(a) Consider a linear model where the sale price of a house is the dependent variable and the explanatory variablesare the other variables given above. Perform a test for linearity. What do you conclude based on the test result?  
+(b) Now consider a linear model where the log of the sale price of the house is the dependent variable and the explanatory variables are as before. Perform again the test for linearity. What do you conclude now?  
+(c) Continue with the linear model from question (b). Estimate a model that includes both the lot size variable and its logarithm, as well as all other explanatory variables without transformation. What is your conclusion, should we include lot size itself or its logarithm?  
+(d) Consider now a model where the log of the sale price of the house is the dependent variable and the explanatory variables are the log transformation of lot size, with all other explanatory variables as before. We now consider interaction effects of the log lot size with the other variables. Construct these interaction variables. How many are individually significant?  
+(e) Perform an F-test for the joint significance of the interaction effects from question (d).  
+(f) Now perform model specification on the interaction variables using the general-to-specific approach. (Only
+eliminate the interaction effects.)  
+(g) One may argue that some of the explanatory variables are endogenous and that there may be omitted variables.
+For example, the ‘condition’ of the house in terms of how it is maintained is not a variable (and difficult to
+measure) but will affect the house price. It will also affect, or be reflected in, some of the other variables, such as whether the house has an air conditioning (which is mostly in newer houses). If the condition of the house is missing, will the effect of air conditioning on the (log of the) sale price be over- or underestimated? (For this question no computer calculations are required.)  
+(h) Finally we analyze the predictive ability of the model. Consider again the model where the log of the sale price of the house is the dependent variable and the explanatory variables are the log transformation of lot size, with all other explanatory variables in their original form (and no interaction effects). Estimate the parameters of the model using the first 400 observations. Make predictions on the log of the price and calculate the MAE for the other 146 observations. How good is the predictive power of the model (relative to the variability in the log of the price)?  
+
+# Answers
+
+Let's load the libraries we'll need, and let's read the data files.
+```{r libraries, message=FALSE}
+library(fRegression)
+library(readxl)
+library(tseries)
+library(knitr)
+library(dLagM)
+data <- read_excel("Case_HousePrices-round1.xlsx")
+```
+Let's store the data set variables to R variables :
+```{r affectation}
+obs <- data$obs
+sell <- data$sell
+lot <- data$lot
+bdms <- data$bdms
+fb <- data$fb
+sty <- data$sty
+drv <- data$drv
+rec <- data$rec
+ffin <- data$ffin
+ghw <- data$ghw
+ca <- data$ca
+gar <- data$gar
+reg <- data$reg
+```
+## Question A 
+
+Let's run the OLS :
+```{r qa}
+modelA <- lm(sell ~ lot + bdms + fb + sty + drv + rec + ffin + ghw + ca + gar + reg)
+summary(modelA)
+resetTest(modelA, power = 2, type = 'fitted', data = data)
+jarqueberaTest(residuals(modelA))
+```
+***Statistics are 26.986, p-value is ~0, Ramsey's RESET test shows that the linear model is not specified correctly (H0 for correct/linear specifications is rejected). ***  
+***In the case where the statistical value is ~247.62 and the p-value is ~0, the Jarque-Bera test indicates that the linear model residuals are not normally distributed, so the linear model is not specified correctly. ***
+
+## Question B
+
+Let's run again the OLS
+```{r qb}
+modelB <- lm(log(sell) ~ lot + bdms + fb + sty + drv + rec + ffin + ghw + ca + gar + reg)
+summary(modelB)
+resetTest(modelB, power = 2, type = 'fitted', data = data)
+jarqueberaTest(residuals(modelB))
+```
+***Using a statistic of ~0.27 and a p-value of ~0.6033, Ramsey's RESET test shows that the second linear model can be correctly specified (H0 with the correct/linear specification is not rejected, the importance level is 5%). ***   
+***Both Ramsey's RESET and Jarque-Bera tests show that the second model is significantly improved from the model originally considered. ***   
+***Ramsey's RESET test indicates that the second linear model may be correctly specified, while the Jarque-Bera test indicates that it is still not specified correctly (although it has been significantly improved).***   
+
+## Question C
+```{r qc}
+modelC <- lm(log(sell) ~ lot + log(lot) + bdms + fb + sty + drv + rec + ffin + ghw + ca + gar + reg)
+summary(modelC)
+```
+***It can be seen that compared with the normal lot, the importance of the logarithm of the lot is significantly improved, the t value is larger, and the coefficient is larger, which can better explain the selling price of the house.***
+
+## Question D
+```{r qd}
+modelD <- lm(log(sell) ~ log(lot) + bdms + 
+               fb + sty + drv + rec + ffin + 
+               ghw + ca + gar + reg + log(lot)*bdms + 
+               log(lot)*fb + log(lot)*sty + log(lot)*drv + 
+               log(lot)*rec + log(lot)*ffin + 
+               log(lot)*ghw + log(lot)*ca + 
+               log(lot)*gar + log(lot)*reg)
+summary(modelD)
+```
+***As we can see, using the 5% significance level, only two of the ten interaction variables used are individually significant which are *log(lot)xdrv* and *log(lot)xrec*, if we compare their significance by comparing their t-statistic.***
+
+## Question E
+```{r qe}
+modelE <- lm(log(sell) ~ log(lot) +
+               bdms + fb + sty + drv + 
+               rec + ffin + ghw + ca + 
+               gar + reg + log(lot)*drv + 
+               log(lot)*rec)
+summary(modelE)
+R2D <- summary(modelD)$r.squared
+R2E <- summary(modelE)$r.squared
+Ftestup <- (R2D - R2E)/10
+Ftestdown <- (1 - R2D)/(546-10)
+Ftest <- Ftestup/Ftestdown
+Ftest
+pf(Ftest, 10, 526)
+```
+***R2 method produced an F-test statistic of 0.61, with a p-value of 0.19. That concludes that interactions are jointly significant at the 5% significance level.***
+
+## Question F
+```{r qf1}
+summary(modelD) 
+```
+We'll have to eliminate the log(lot)*ffin variable.
+```{r qf2}
+modelE1 <- lm(log(sell) ~ log(lot) + bdms + 
+                fb + sty + drv + rec + ffin + 
+                ghw + ca + gar + reg + log(lot)*bdms + 
+                log(lot)*fb + log(lot)*sty + log(lot)*drv + 
+                log(lot)*rec + log(lot)*ghw + log(lot)*ca + 
+                log(lot)*gar + log(lot)*reg)
+summary(modelE1)
+```
+We remove the log(lot)*reg variable.
+```{r qf3}
+modelE2 <- lm(log(sell) ~ log(lot) + bdms + 
+                fb + sty + drv + rec + ffin + 
+                ghw + ca + gar + reg + log(lot)*bdms + 
+                log(lot)*fb + log(lot)*sty + log(lot)*drv + 
+                log(lot)*rec + log(lot)*ghw + log(lot)*ca + 
+                log(lot)*gar)
+summary(modelE2)
+```
+We remove the log(lot)*bdms variable.
+```{r qf4}
+modelE3 <- lm(log(sell) ~ log(lot) + bdms + 
+                fb + sty + drv + rec + ffin + 
+                ghw + ca + gar + reg + log(lot)*fb + 
+                log(lot)*sty + log(lot)*drv + log(lot)*rec + 
+                log(lot)*ghw + log(lot)*ca + log(lot)*gar)
+summary(modelE3)
+```
+We remove the log(lot)*gar variable.
+```{r qf5}
+modelE4 <- lm(log(sell) ~ log(lot) + bdms + 
+                fb + sty + drv + rec + ffin + 
+                ghw + ca + gar + reg + log(lot)*fb + 
+                log(lot)*sty + log(lot)*drv + log(lot)*rec + 
+                log(lot)*ghw + log(lot)*ca)
+summary(modelE4)
+```
+We remove the log(lot)*ghw variable.
+```{r qf6}
+modelE5 <- lm(log(sell) ~ log(lot) + bdms + 
+                fb + sty + drv + rec + ffin + ghw + 
+                ca + gar + reg + log(lot)*fb + 
+                log(lot)*sty + log(lot)*drv + log(lot)*rec + 
+                log(lot)*ca)
+summary(modelE5)
+```
+We remove the log(lot)*ca variable.
+```{r qf7}
+modelE6 <- lm(log(sell) ~ log(lot) + bdms + fb + sty + 
+                drv + rec + ffin + ghw + ca + gar + 
+                reg + log(lot)*fb + log(lot)*sty + 
+                log(lot)*drv + log(lot)*rec)
+summary(modelE6)
+```
+We remove the log(lot)*sty variable.
+```{r qf8}
+modelE7 <- lm(log(sell) ~ log(lot) + bdms + fb + 
+                sty + drv + rec + ffin + ghw + ca + 
+                gar + reg + log(lot)*fb + log(lot)*drv + 
+                log(lot)*rec)
+summary(modelE7)
+```
+We remove the log(lot)*fb variable.
+```{r qf9}
+modelE8 <- lm(log(sell) ~ log(lot) + bdms + fb + 
+                sty + drv + rec + ffin + ghw + ca +
+                gar + reg + log(lot)*drv + log(lot)*rec)
+summary(modelE8)
+```
+We remove the log(lot)*drv variable.
+```{r qf10}
+modelE9 <- lm(log(sell) ~ log(lot) + bdms + fb + 
+                sty + drv + rec + ffin + ghw + 
+                ca + gar + reg + log(lot)*rec)
+summary(modelE9)
+```
+***All the remaining parameters now are the most significant, including one interaction which is log(lot)*rec.***
+
+## Question G
+***The effect of the air conditioner ca variable on the logarithm of the selling price LOG (sell) variable will be overestimated because it is usually affected by the age of the house (and the condition of the house), and the age of the house (and the condition of the house) will logically affect it. The sales price of houses is positive. Therefore, the influence of age and conditional house attributes (which our model cannot use as a variable) is partly included in the air conditioner ca variable. And because the impact is expected to have a positive impact on the house price (and its logarithm), it will increase the impact of the air conditioner ca variable in our model (thus, its estimated impact is overestimated).***
+
+
+## Question H
+```{r qh}
+datWork1 <- data[which(data$obs <= 400), ]
+n1 <- nrow(datWork1)
+datWork2 <- data[which(data$obs > 400), ]
+n2 <- nrow(datWork2)
+modelH <- lm(log(sell) ~ log(lot) + bdms + fb + 
+               sty + drv + rec + ffin + ghw + ca + 
+               gar + reg, data = datWork1)
+summary(modelH)
+ts <- ts(data = datWork1, start = 1, end=400)
+```

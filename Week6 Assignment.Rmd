@@ -1,0 +1,135 @@
+---
+title: "Week 6 Assignment"
+author: "Farouq El-Abbass"
+date: "09/06/2020"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Questions
+This test exercise uses data that are available in the data file TestExer6. The question of interest is to model monthly inflation in the Euro area and to investigate whether inflation in the United States of America has predictive power for inflation in the Euro area. Monthly data on the consumer price index (CPI) for the Euro area and the USA are available from January 2000 until December 2011. The data for January 2000 until December 2010 are used for specification and estimation of models, and the data for 2011 are left out for forecast evaluation purposes.  
+(a) Make time series plots of the CPI of the Euro area and the USA, and also of their logarithm $log(CPI)$ and of the two monthly inflation series $DP = \Delta log(CPI)$. What conclusions do you draw from these plots?  
+(b) Perform the Augmented Dickey-Fuller (ADF) test for the two $log(CPI)$ series. In the ADF test equation, include a constant $(\alpha)$, a deterministic trend term ($\beta_t$), three lags of $DP = \Delta log(CPI)$ and, of course, the variable of interest log(CPIt−1). Report the coefficient of log(CPIt−1) and its standard error and t-value, and draw your conclusion.  
+(c) As the two series of $log(CPI)$ are not cointegrated (you need not check this), we continue by modelling the monthly inflation series $DPEUR = \Delta log(CPIEUR)$ for the Euro area. Determine the sample autocorrelations and the sample partial autocorrelations of this series to motivate the use of the following AR model: $DPEUR_t = \alpha+\beta_1DPEUR_{t−6} +\beta_2DPEUR_{t−12} +\epsilon_t$. Estimate the parameters of this model (sample Jan 2000 - Dec 2010).  
+(d) Extend the AR model of part (c) by adding lagged values of monthly inflation in the USA at lags 1, 6, and 12. Check that the coefficient at lag 6 is not significant, and estimate the ADL model : $DPEUR_t = \alpha + \beta_1DPEUR_{t−6} + \beta_2DPEUR_{t−12} + \gamma_1DPUSA_{t−1} + \gamma_2DPUSA_{t−12} + \epsilon_t$ (sample Jan 2000 - Dec 2010).  
+(e) Use the models of parts (c) and (d) to make two series of 12 monthly inflation forecasts for 2011. At each month, you should use the data that are then available, for example, to forecast inflation for September 2011 you can use the data up to and including August 2011. However, do not re-estimate the model and use the coefficients as obtained in parts (c) and (d). For each of the two forecast series, compute the values of the root mean squared error (RMSE), mean absolute error (MAE), and the sum of the forecast errors (SUM). Finally, give your interpretation of the outcomes.
+
+# Answers
+Let's load the libraries we'll need, and let's read the data files.
+```{r libraries, message=FALSE}
+library(dplyr)
+library(fRegression)
+library(ggplot2)
+library(readxl)
+library(zoo)
+library(gridExtra)
+library(tseries)
+library(knitr)
+library(forecast)
+library(dLagM)
+data <- read_excel("TestExer-6-CPI.xlsx")
+```
+
+## Question A
+Let's plot the time series.
+```{r plot1}
+date <- as.yearmon(data$`YYYY-MM`)
+plot1 <- ggplot(data, aes(date))  + 
+  geom_line(data = data, aes(y=CPI_EUR, colour="EUR")) + 
+  geom_line(data = data, aes(y=CPI_USA, colour='USA')) + 
+  labs(y='CPI',x='DATE') 
+plot1
+```
+***USA CPI seems higher than European one.***   
+***USA CPI and EUR CPI seem to be correlated.***  
+```{r plot2}
+plot2 <- ggplot(data, aes(date)) + 
+  geom_line(data = data, aes(y=LOGPEUR, colour="LOGPEUR")) + 
+  geom_line(data = data, aes(y=LOGPUSA, colour='LOGPUSA')) + 
+  labs(y='LOGCPI',x='DATE') 
+plot2
+```
+***The exact same comments as the previous one before, especially regarding correltion.***  
+```{r plot3}
+data$DPUSA <- as.double(data$DPUSA)
+data$DPEUR <- as.double(data$DPEUR)
+plot3 <- ggplot(data, aes(date)) + 
+  geom_line(aes(y=DPEUR, colour="DPEUR")) + 
+  geom_line(aes(y=DPUSA, colour='DPUSA')) + 
+  labs(y='DPCPI',x='DATE') 
+plot3
+```
+***Same comment as the previous ones, besides we can conculde that the variables seems stationnary.***  
+
+## Question B
+Let's run the Augmented Dicky Fuller Test with R defined function adf.test:
+```{r adf}
+adfeur <- adf.test(data$LOGPEUR, alternative = 'stationary', k=3)
+adfusa <- adf.test(data$LOGPUSA, alternative = 'stationary', k=3)
+adfusa
+adfeur
+```
+For the log-index in Europe, the coefficient of $log(CPEUR_{t-1})$ is $-1.374e-01$ with a t-value of *-2.826*.   
+For the log-index in USA, the coefficient of $log(CPUSA_{t-1})$ is $-7.434e-02$ with a t-value of *-2.734*.  
+We have included the deterministic trend term, so the the tested model has for a null hypothesis a 5% critical value of −3.5 (meaning: reject H0 of non-stationarity if t<−3.5):
+For both variables, the t-statistic is greater than the critical value of −3.5. Therefore, ***the non-stationarity hypothesis is not rejected.***  
+
+## Question C
+Let's check the autocorrelation values :  
+```{r auto}
+datWork <- data[1:(12*11),]
+
+nn <- nrow(datWork) - 1
+# Prepare results data.frame
+ac <- data.frame(lag = 1:nn)
+ac$AC <- NA;    ac$PAC <- NA
+for (i in 1:nn) {
+    acf <- acf(datWork$DPEUR, lag.max = i, type = 'correlation', 
+               na.action = na.pass, plot = FALSE, demean = TRUE)
+    pcf <- acf(datWork$DPEUR, lag.max = i, type = 'partial', 
+               na.action = na.pass, plot = FALSE, demean = TRUE)
+    ac[i, 1] <- i
+    ac[i, 2] <- acf$acf[i + 1, 1, 1]
+    ac[i, 3] <- pcf$acf[i + 0, 1, 1]
+}
+
+kable(ac, format = "markdown", align = 'c')
+```
+We can see that the lags with the largest values found during that process, were 6 and 12.  
+Now let's estimate the coefficients:
+```{r ols}
+dpeur6 <- lag(datWork$DPEUR, n = 6)
+dpeur12 <- lag(datWork$DPEUR, n = 12)
+model1 <- lm(datWork$DPEUR ~ dpeur12 + dpeur6)
+summary(model1)
+```
+
+The model is :
+$$
+DPEUR_t=0+0.188DPEUR_{t-6}+0.597DPEUR_{t-12}+\epsilon_t
+$$
+
+## Question D
+```{r ols2}
+dpusa1 <- lag(datWork$DPUSA, n=1)
+dpusa6 <- lag(datWork$DPUSA, n=6)
+dpusa12 <- lag(datWork$DPUSA, n=12)
+summary(lm(datWork$DPEUR ~ dpeur6 + dpeur12 + dpusa1 + dpusa6 + dpusa12))
+```
+
+We can see that the 6th lag of DPUSA is not significant (low t-value).  
+Let's estimate the ADL model :  
+```{r adl}
+model2 <- lm(datWork$DPEUR ~ dpeur6 + dpeur12 + dpusa1 + dpusa12)
+summary(model2)
+```
+
+The model is : 
+$$
+DPEUR_t=0+0.17DPEUR_{t-6}+0.65DPEUR_{t-12}+0.23DPUSA_{t-1}-0.23DPUSA_{t-12}+\epsilon_t
+$$
